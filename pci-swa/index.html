@@ -4,67 +4,67 @@
   <meta charset="UTF-8" />
   <title>PCI Firewall Helper</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap for basic layout -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
   />
   <style>
-  body {
-    background-color: #f3f4f6;   /* Light gray */
-    color: #1f2937;              /* Dark gray text */
-  }
+    body {
+      background-color: #f3f4f6;   /* Light gray */
+      color: #1f2937;              /* Dark gray text */
+    }
 
-  .card {
-    background-color: #ffffff;   /* White cards */
-    border: 1px solid #d1d5db;   /* Light border */
-    border-radius: 8px;
-  }
+    .card {
+      background-color: #ffffff;   /* White cards */
+      border: 1px solid #d1d5db;   /* Light border */
+      border-radius: 8px;
+    }
 
-  .form-label {
-    font-weight: 600;
-    color: #111827;
-  }
+    .form-label {
+      font-weight: 600;
+      color: #111827;
+    }
 
-  .zone-badge {
-    font-size: 0.8rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 999px;
-    font-weight: 600;
-  }
+    .zone-badge {
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
 
-  /* PCI Zones */
-  .zone-CDE {
-    background-color: #dc2626;   /* Brighter red */
-    color: #ffffff;
-  }
+    /* PCI Zones */
+    .zone-CDE {
+      background-color: #dc2626;   /* Brighter red */
+      color: #ffffff;
+    }
 
-  .zone-CSE {
-    background-color: #d97706;   /* Bright amber */
-    color: #ffffff;
-  }
+    .zone-CSE {
+      background-color: #d97706;   /* Bright amber */
+      color: #ffffff;
+    }
 
-  .zone-none {
-    background-color: #6b7280;   /* Medium gray */
-    color: #ffffff;
-  }
+    .zone-none {
+      background-color: #6b7280;   /* Medium gray */
+      color: #ffffff;
+    }
 
-  /* Preformatted diagnostic area */
-  pre {
-    background-color: #f9fafb;   /* Light panel */
-    color: #111827;
-    padding: 0.75rem;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-    font-size: 0.85rem;
-    max-height: 300px;
-    overflow: auto;
-  }
+    /* Preformatted diagnostic area */
+    pre {
+      background-color: #f9fafb;   /* Light panel */
+      color: #111827;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      font-size: 0.85rem;
+      max-height: 300px;
+      overflow: auto;
+    }
 
-  /* Subtle muted text */
-  .text-secondary {
-    color: #4b5563 !important;
-  }
-</style>
+    .text-secondary {
+      color: #4b5563 !important;
+    }
+  </style>
 </head>
 <body class="py-4">
   <div class="container" style="max-width: 900px;">
@@ -74,12 +74,13 @@
       them up against the PCI network index and shows potential PCI impact.
     </p>
 
+    <!-- Input form card -->
     <div class="card mb-3">
       <div class="card-body">
         <form id="firewallForm">
           <div class="row g-3">
-            <div class="col-md-4">
-              <label for="srcIp" class="form-label">Source IP</</label>
+            <div class="col-md-3">
+              <label for="srcIp" class="form-label">Source IP</label>
               <input
                 type="text"
                 class="form-control"
@@ -88,7 +89,7 @@
                 required
               />
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label for="dstIp" class="form-label">Destination IP</label>
               <input
                 type="text"
@@ -98,13 +99,43 @@
                 required
               />
             </div>
-            <div class="col-md-4">
+            <div class="col-md-2">
+              <label for="protocol" class="form-label">Protocol</label>
+              <input
+                type="text"
+                class="form-control"
+                id="protocol"
+                placeholder="TCP/UDP/Any"
+              />
+            </div>
+            <div class="col-md-2">
+              <label for="srcPort" class="form-label">Source Port</label>
+              <input
+                type="text"
+                class="form-control"
+                id="srcPort"
+                placeholder="Any/22/443"
+              />
+            </div>
+            <div class="col-md-2">
+              <label for="dstPort" class="form-label">Destination Port</label>
+              <input
+                type="text"
+                class="form-control"
+                id="dstPort"
+                placeholder="22/443"
+              />
+            </div>
+          </div>
+
+          <div class="row g-3 mt-2">
+            <div class="col-12">
               <label for="context" class="form-label">Context (optional)</label>
               <input
                 type="text"
                 class="form-control"
                 id="context"
-                placeholder="e.g. SSH admin for support"
+                placeholder="e.g. SSH admin access from bastion"
               />
             </div>
           </div>
@@ -119,10 +150,13 @@
       </div>
     </div>
 
+    <!-- Result area -->
     <div id="resultArea" class="d-none">
       <div class="card mb-3">
         <div class="card-body">
           <h5 class="card-title mb-3">Result</h5>
+
+          <div class="mb-2 small text-secondary" id="ruleSummary"></div>
 
           <div class="row g-3">
             <div class="col-md-6">
@@ -154,13 +188,13 @@
       </details>
     </div>
 
+    <!-- Error area -->
     <div id="errorArea" class="d-none">
       <div class="alert alert-danger" role="alert" id="errorText"></div>
     </div>
   </div>
 
   <script>
-    // Use the URL you already tested in PowerShell
     const FUNCTION_URL = "https://az-dev-cyber-pci-function-app.azurewebsites.net/api/FirewallCheck?code=MBX0w4Bm6zZl4LZIZHJtS7f8nEoJo13QuHbr41GFQpdLAzFu27tNpg==";
 
     const form = document.getElementById("firewallForm");
@@ -175,6 +209,7 @@
     const pciImpactEl = document.getElementById("pciImpact");
     const notesEl = document.getElementById("notes");
     const rawResponseEl = document.getElementById("rawResponse");
+    const ruleSummaryEl = document.getElementById("ruleSummary");
 
     function zoneBadge(zone) {
       if (!zone) return '<span class="zone-badge zone-none">Unknown</span>';
@@ -199,6 +234,14 @@
       );
     }
 
+    function buildRuleSummary(data) {
+      const proto = data.protocol || "Any protocol";
+      const sPort = data.srcPort || "Any";
+      const dPort = data.dstPort || "Any";
+      const ctx = data.context ? ` | Context: ${data.context}` : "";
+      return `${proto} ${sPort} → ${dPort} from ${data.srcIp} to ${data.dstIp}${ctx}`;
+    }
+
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
       errorArea.classList.add("d-none");
@@ -206,10 +249,21 @@
       statusEl.textContent = "Calling firewall helper API...";
       submitBtn.disabled = true;
 
-      var srcIp = document.getElementById("srcIp").value.trim();
-      var dstIp = document.getElementById("dstIp").value.trim();
+      var srcIp    = document.getElementById("srcIp").value.trim();
+      var dstIp    = document.getElementById("dstIp").value.trim();
+      var protocol = document.getElementById("protocol").value.trim();
+      var srcPort  = document.getElementById("srcPort").value.trim();
+      var dstPort  = document.getElementById("dstPort").value.trim();
+      var context  = document.getElementById("context").value.trim();
 
-      var payload = { srcIp: srcIp, dstIp: dstIp };
+      var payload = {
+        srcIp: srcIp,
+        dstIp: dstIp,
+        protocol: protocol || null,
+        srcPort: srcPort || null,
+        dstPort: dstPort || null,
+        context: context || null
+      };
 
       try {
         var res = await fetch(FUNCTION_URL, {
@@ -232,10 +286,13 @@
           );
         }
 
+        // Render result
         srcSummary.innerHTML = formatEndpoint("Source", data.srcIp, data.src);
         dstSummary.innerHTML = formatEndpoint("Destination", data.dstIp, data.dst);
         pciImpactEl.textContent = data.pciImpact || "Unknown";
         notesEl.textContent = data.notes || "";
+
+        ruleSummaryEl.textContent = buildRuleSummary(data);
 
         rawResponseEl.textContent = JSON.stringify(data, null, 2);
 
