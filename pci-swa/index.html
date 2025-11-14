@@ -4,308 +4,136 @@
   <meta charset="UTF-8" />
   <title>PCI Firewall Helper</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Bootstrap for basic layout -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
   />
   <style>
     body {
-      background-color: #f3f4f6;   /* Light gray */
-      color: #1f2937;              /* Dark gray text */
+      background-color: #f8fafc;
+      color: #1e293b;
     }
-
     .card {
-      background-color: #ffffff;   /* White cards */
-      border: 1px solid #d1d5db;   /* Light border */
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    textarea {
+      background-color: #ffffff;
+      color: #1e293b;
+    }
+    .result-box {
+      white-space: pre-wrap;
+      background-color: #f1f5f9;
       border-radius: 8px;
-    }
-
-    .form-label {
-      font-weight: 600;
-      color: #111827;
-    }
-
-    .zone-badge {
-      font-size: 0.8rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 999px;
-      font-weight: 600;
-    }
-
-    /* PCI Zones */
-    .zone-CDE {
-      background-color: #dc2626;   /* Brighter red */
-      color: #ffffff;
-    }
-
-    .zone-CSE {
-      background-color: #d97706;   /* Bright amber */
-      color: #ffffff;
-    }
-
-    .zone-none {
-      background-color: #6b7280;   /* Medium gray */
-      color: #ffffff;
-    }
-
-    /* Preformatted diagnostic area */
-    pre {
-      background-color: #f9fafb;   /* Light panel */
-      color: #111827;
-      padding: 0.75rem;
-      border-radius: 6px;
-      border: 1px solid #e5e7eb;
-      font-size: 0.85rem;
-      max-height: 300px;
-      overflow: auto;
-    }
-
-    .text-secondary {
-      color: #4b5563 !important;
+      padding: 12px;
+      font-family: Consolas, monospace;
+      font-size: 0.95rem;
     }
   </style>
 </head>
-<body class="py-4">
-  <div class="container" style="max-width: 900px;">
-    <h1 class="mb-1">PCI Firewall Rule Helper</h1>
-    <p class="text-secondary mb-4">
-      Enter source and destination IPs from a firewall request. This tool looks
-      them up against the PCI network index and shows potential PCI impact.
-    </p>
+<body>
+<div class="container my-5">
+  <h1 class="mb-4 text-center">PCI Firewall Assessment Assistant</h1>
 
-    <!-- Input form card -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <form id="firewallForm">
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label for="srcIp" class="form-label">Source IP</label>
-              <input
-                type="text"
-                class="form-control"
-                id="srcIp"
-                placeholder="e.g. 172.20.214.5"
-                required
-              />
-            </div>
-            <div class="col-md-3">
-              <label for="dstIp" class="form-label">Destination IP</label>
-              <input
-                type="text"
-                class="form-control"
-                id="dstIp"
-                placeholder="e.g. 10.88.16.5"
-                required
-              />
-            </div>
-            <div class="col-md-2">
-              <label for="protocol" class="form-label">Protocol</label>
-              <input
-                type="text"
-                class="form-control"
-                id="protocol"
-                placeholder="TCP/UDP/Any"
-              />
-            </div>
-            <div class="col-md-2">
-              <label for="srcPort" class="form-label">Source Port</label>
-              <input
-                type="text"
-                class="form-control"
-                id="srcPort"
-                placeholder="Any/22/443"
-              />
-            </div>
-            <div class="col-md-2">
-              <label for="dstPort" class="form-label">Destination Port</label>
-              <input
-                type="text"
-                class="form-control"
-                id="dstPort"
-                placeholder="22/443"
-              />
-            </div>
-          </div>
-
-          <div class="row g-3 mt-2">
-            <div class="col-12">
-              <label for="context" class="form-label">Context (optional)</label>
-              <input
-                type="text"
-                class="form-control"
-                id="context"
-                placeholder="e.g. SSH admin access from bastion"
-              />
-            </div>
-          </div>
-
-          <div class="mt-3 d-flex align-items-center gap-3">
-            <button type="submit" class="btn btn-primary" id="submitBtn">
-              Evaluate
-            </button>
-            <div id="status" class="text-secondary small"></div>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Result area -->
-    <div id="resultArea" class="d-none">
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5 class="card-title mb-3">Result</h5>
-
-          <div class="mb-2 small text-secondary" id="ruleSummary"></div>
-
-          <div class="row g-3">
-            <div class="col-md-6">
-              <h6>Source</h6>
-              <div id="srcSummary" class="small text-secondary"></div>
-            </div>
-            <div class="col-md-6">
-              <h6>Destination</h6>
-              <div id="dstSummary" class="small text-secondary"></div>
-            </div>
-          </div>
-
-          <hr />
-
-          <div class="mb-2">
-            <span class="fw-semibold">PCI Impact:</span>
-            <span id="pciImpact" class="ms-1"></span>
-          </div>
-          <div class="mb-2">
-            <span class="fw-semibold">Notes:</span>
-            <span id="notes" class="ms-1 text-secondary"></span>
-          </div>
-        </div>
+  <div class="card p-4">
+    <form id="fwForm">
+      
+      <!-- Source IP -->
+      <div class="mb-3">
+        <label class="form-label">Source IP</label>
+        <input type="text" id="srcIp" class="form-control" placeholder="e.g. 10.10.10.5" required />
       </div>
 
-      <details class="mb-3">
-        <summary class="text-secondary">Show raw response</summary>
-        <pre id="rawResponse"></pre>
-      </details>
-    </div>
+      <!-- Destination IP -->
+      <div class="mb-3">
+        <label class="form-label">Destination IP</label>
+        <input type="text" id="dstIp" class="form-control" placeholder="e.g. 172.20.214.5" required />
+      </div>
 
-    <!-- Error area -->
-    <div id="errorArea" class="d-none">
-      <div class="alert alert-danger" role="alert" id="errorText"></div>
-    </div>
+      <!-- Protocol dropdown (updated per request) -->
+      <div class="mb-3">
+        <label class="form-label">Protocol</label>
+        <select id="protocol" class="form-select">
+          <option value="TCP">TCP</option>
+          <option value="UDP">UDP</option>
+          <option value="Both">Both</option>
+        </select>
+      </div>
+
+      <!-- Source Port -->
+      <div class="mb-3">
+        <label class="form-label">Source Port (optional)</label>
+        <input type="number" id="srcPort" class="form-control" placeholder="e.g. 443" />
+      </div>
+
+      <!-- Destination Port -->
+      <div class="mb-3">
+        <label class="form-label">Destination Port (optional)</label>
+        <input type="number" id="dstPort" class="form-control" placeholder="e.g. 443" />
+      </div>
+
+      <!-- Context -->
+      <div class="mb-3">
+        <label class="form-label">Context (optional)</label>
+        <textarea id="context" class="form-control" rows="3"
+                  placeholder="Describe purpose, system role, change ticket, etc."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">Evaluate</button>
+    </form>
   </div>
 
-  <script>
-    const FUNCTION_URL = "https://az-dev-cyber-pci-function-app.azurewebsites.net/api/FirewallCheck?code=MBX0w4Bm6zZl4LZIZHJtS7f8nEoJo13QuHbr41GFQpdLAzFu27tNpg==";
+  <!-- Results -->
+  <div id="resultContainer" class="mt-4" style="display:none;">
+    <h4>Assessment Result</h4>
+    <div class="result-box" id="resultBox"></div>
+  </div>
+</div>
 
-    const form = document.getElementById("firewallForm");
-    const submitBtn = document.getElementById("submitBtn");
-    const statusEl = document.getElementById("status");
-    const resultArea = document.getElementById("resultArea");
-    const errorArea = document.getElementById("errorArea");
-    const errorText = document.getElementById("errorText");
+<script>
+  const FUNCTION_URL = "https://az-dev-cyber-pci-function-app.azurewebsites.net/api/FirewallCheck?code=MBX0w4Bm6zZl4LZIZHJtS7f8nEoJo13QuHbr41GFQpdLAzFu27tNpg==";
 
-    const srcSummary = document.getElementById("srcSummary");
-    const dstSummary = document.getElementById("dstSummary");
-    const pciImpactEl = document.getElementById("pciImpact");
-    const notesEl = document.getElementById("notes");
-    const rawResponseEl = document.getElementById("rawResponse");
-    const ruleSummaryEl = document.getElementById("ruleSummary");
+  document.getElementById("fwForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-    function zoneBadge(zone) {
-      if (!zone) return '<span class="zone-badge zone-none">Unknown</span>';
-      if (zone === "CDE")
-        return '<span class="zone-badge zone-CDE">CDE</span>';
-      if (zone === "CSE")
-        return '<span class="zone-badge zone-CSE">CSE</span>';
-      return '<span class="zone-badge zone-none">' + zone + "</span>";
-    }
+    const payload = {
+      srcIp: document.getElementById("srcIp").value.trim(),
+      dstIp: document.getElementById("dstIp").value.trim(),
+      protocol: document.getElementById("protocol").value,
+      srcPort: document.getElementById("srcPort").value || null,
+      dstPort: document.getElementById("dstPort").value || null,
+      context: document.getElementById("context").value.trim() || null
+    };
 
-    function formatEndpoint(label, ip, seg) {
-      if (!seg) {
-        return (
-          "<div><strong>" + label + ":</strong> " + ip + "</div>" +
-          "<div>No matching segment found in PCI index.</div>"
-        );
-      }
-      return (
-        "<div><strong>" + label + ":</strong> " + ip + " " + zoneBadge(seg.zone) + "</div>" +
-        "<div>" + (seg.segment_name || "Unknown segment") + " (" + (seg.cidr || "?") + ")</div>" +
-        "<div>" + (seg.location || "") + "</div>"
-      );
-    }
+    try {
+      const response = await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    function buildRuleSummary(data) {
-      const proto = data.protocol || "Any protocol";
-      const sPort = data.srcPort || "Any";
-      const dPort = data.dstPort || "Any";
-      const ctx = data.context ? ` | Context: ${data.context}` : "";
-      return `${proto} ${sPort} → ${dPort} from ${data.srcIp} to ${data.dstIp}${ctx}`;
-    }
+      const text = await response.text();
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      errorArea.classList.add("d-none");
-      resultArea.classList.add("d-none");
-      statusEl.textContent = "Calling firewall helper API...";
-      submitBtn.disabled = true;
-
-      var srcIp    = document.getElementById("srcIp").value.trim();
-      var dstIp    = document.getElementById("dstIp").value.trim();
-      var protocol = document.getElementById("protocol").value.trim();
-      var srcPort  = document.getElementById("srcPort").value.trim();
-      var dstPort  = document.getElementById("dstPort").value.trim();
-      var context  = document.getElementById("context").value.trim();
-
-      var payload = {
-        srcIp: srcIp,
-        dstIp: dstIp,
-        protocol: protocol || null,
-        srcPort: srcPort || null,
-        dstPort: dstPort || null,
-        context: context || null
-      };
-
+      let data;
       try {
-        var res = await fetch(FUNCTION_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        var text = await res.text();
-        var data;
-        try {
-          data = text ? JSON.parse(text) : null;
-        } catch (e) {
-          throw new Error("API returned non-JSON response: " + text);
-        }
-
-        if (!res.ok) {
-          throw new Error(
-            data && data.error ? data.error : "API error: " + res.status
-          );
-        }
-
-        // Render result
-        srcSummary.innerHTML = formatEndpoint("Source", data.srcIp, data.src);
-        dstSummary.innerHTML = formatEndpoint("Destination", data.dstIp, data.dst);
-        pciImpactEl.textContent = data.pciImpact || "Unknown";
-        notesEl.textContent = data.notes || "";
-
-        ruleSummaryEl.textContent = buildRuleSummary(data);
-
-        rawResponseEl.textContent = JSON.stringify(data, null, 2);
-
-        resultArea.classList.remove("d-none");
-        statusEl.textContent = "Done.";
-      } catch (err) {
-        errorText.textContent = err.message || String(err);
-        errorArea.classList.remove("d-none");
-        statusEl.textContent = "Error.";
-      } finally {
-        submitBtn.disabled = false;
+        data = JSON.parse(text);
+      } catch {
+        data = { error: "Invalid JSON returned from server", raw: text };
       }
-    });
-  </script>
+
+      document.getElementById("resultBox").textContent =
+        JSON.stringify(data, null, 2);
+
+      document.getElementById("resultContainer").style.display = "block";
+
+    } catch (err) {
+      document.getElementById("resultBox").textContent =
+        "Error calling Function API:\n" + err;
+
+      document.getElementById("resultContainer").style.display = "block";
+    }
+  });
+</script>
 </body>
 </html>
